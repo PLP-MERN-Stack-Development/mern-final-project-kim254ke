@@ -1,38 +1,36 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:5000/api/bookings";
+// Since your backend runs on port 5000 (from server.js)
+const API_URL = "http://localhost:5000/api";
 
-export const getBookings = async (token) => {
-  const response = await axios.get(API_URL, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return response.data;
-};
-
+// Get all bookings for a user
 export const getUserBookings = async (userId, token) => {
-  const response = await axios.get(`${API_URL}/user/${userId}`, {
+  const res = await axios.get(`${API_URL}/bookings/user/${userId}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  return response.data;
+  return res.data;
 };
 
-export const createBooking = async (booking, token) => {
-  const response = await axios.post(API_URL, booking, {
+// Create a new booking
+export const createBooking = async (bookingData, token) => {
+  const res = await axios.post(`${API_URL}/bookings`, bookingData, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  return response.data;
+  return res.data;
 };
 
-export const updateBooking = async (id, updates, token) => {
-  const response = await axios.patch(`${API_URL}/${id}`, updates, {
+// Update a booking (reschedule)
+export const updateBooking = async (booking, token) => {
+  const res = await axios.put(`${API_URL}/bookings/${booking._id}`, booking, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  return response.data;
+  return res.data;
 };
 
-export const cancelBooking = async (id, token) => {
-  const response = await axios.delete(`${API_URL}/${id}`, {
+// Delete / cancel a booking
+export const deleteBooking = async (bookingId, token) => {
+  const res = await axios.delete(`${API_URL}/bookings/${bookingId}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  return response.data;
+  return res.data;
 };
