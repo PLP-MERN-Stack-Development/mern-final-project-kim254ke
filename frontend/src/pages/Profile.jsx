@@ -1,27 +1,67 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { PencilSquareIcon } from "@heroicons/react/24/solid";
+import axios from "axios";
 
 export default function ProfilePage() {
-  const { user, logoutUser } = useContext(AuthContext);
-  const [avatarPreview, setAvatarPreview] = useState(user.avatar || "/default-avatar.png");
+  const { user, updateUser, logoutUser } = useContext(AuthContext);
+  
+  const [avatarPreview, setAvatarPreview] = useState(
+    user?.avatar || "/default-avatar.png"
+  );
 
-  // Handle file selection
-  const handleAvatarChange = (e) => {
+  // Sync avatarPreview with user.avatar changes
+  useEffect(() => {
+    if (user?.avatar) {
+      setAvatarPreview(user.avatar);
+      console.log("✅ Avatar loaded from user:", user.avatar);
+    }
+  }, [user]);
+
+  const handleAvatarChange = async (e) => {
     const file = e.target.files[0];
-    if (file) {
-      // Preview the selected image
-      const reader = new FileReader();
-      reader.onload = () => {
-        setAvatarPreview(reader.result);
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
 
-      // TODO: send 'file' to backend to update user's avatar
+    console.log("📤 Uploading file:", file.name);
+
+    // Preview locally (temporary)
+    const reader = new FileReader();
+    reader.onload = () => setAvatarPreview(reader.result);
+    reader.readAsDataURL(file);
+
+    try {
+      const formData = new FormData();
+      formData.append("avatar", file);
+
+      const res = await axios.put(
+        `http://localhost:5000/api/user/avatar/${user._id}`,
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
+
+      console.log("✅ Avatar uploaded successfully:", res.data.avatar);
+      
+      // Update context and localStorage with full URL
+      updateUser({ avatar: res.data.avatar });
+      setAvatarPreview(res.data.avatar);
+      
+    } catch (err) {
+      console.error("❌ Failed to upload avatar:", err);
+      alert("Failed to upload avatar. Please try again.");
+      // Reset to previous avatar
+      setAvatarPreview(user.avatar || "/default-avatar.png");
     }
   };
 
-  if (!user) return null;
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-100 to-pink-100 dark:from-gray-800 dark:to-gray-900 p-6 flex justify-center items-center">
+        <div className="text-gray-700 dark:text-gray-300 text-lg">
+          Loading profile...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-100 to-pink-100 dark:from-gray-800 dark:to-gray-900 p-6 flex justify-center items-start">
@@ -33,12 +73,16 @@ export default function ProfilePage() {
             src={avatarPreview}
             alt="Profile"
             className="w-32 h-32 rounded-full object-cover border-4 border-purple-600 dark:border-purple-500"
+            onError={(e) => {
+              console.log("❌ Image failed to load, using fallback");
+              e.target.src = "/default-avatar.png";
+            }}
           />
 
-          {/* Edit Icon */}
           <label htmlFor="avatarInput" className="absolute bottom-1 right-1 bg-purple-600 dark:bg-purple-500 p-2 rounded-full shadow-md hover:bg-purple-700 dark:hover:bg-purple-600 cursor-pointer transition-colors">
             <PencilSquareIcon className="w-5 h-5 text-white" />
           </label>
+
           <input
             type="file"
             id="avatarInput"
@@ -69,7 +113,6 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Logout Button */}
         <button
           onClick={logoutUser}
           className="mt-6 w-full px-6 py-2 bg-purple-600 dark:bg-purple-700 text-white rounded hover:bg-purple-700 dark:hover:bg-purple-800 transition-colors"

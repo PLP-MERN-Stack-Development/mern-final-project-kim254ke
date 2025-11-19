@@ -28,6 +28,10 @@ const userSchema = new mongoose.Schema(
       enum: ["user", "admin"],
       default: "user",
     },
+    avatar: {
+      type: String,
+      default: "/default-avatar.png", // default avatar
+    },
   },
   { timestamps: true }
 );

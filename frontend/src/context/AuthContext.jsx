@@ -31,8 +31,21 @@ const AuthProvider = ({ children }) => {
     localStorage.removeItem("token");
   };
 
+  // ✅ Add updateUser function to handle profile updates
+  const updateUser = (updatedData) => {
+    const updatedUser = { ...user, ...updatedData };
+    setUser(updatedUser);
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+  };
+
   return (
-    <AuthContext.Provider value={{ user, token, loginUser, logoutUser }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      token, 
+      loginUser, 
+      logoutUser,
+      updateUser  // ✅ Add this for updating user profile
+    }}>
       {children}
     </AuthContext.Provider>
   );
