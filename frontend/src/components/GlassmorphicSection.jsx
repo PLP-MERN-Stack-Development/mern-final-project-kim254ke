@@ -1,11 +1,12 @@
 // src/components/GlassmorphicSection.jsx
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { HandThumbUpIcon, FaceSmileIcon, ScissorsIcon } from "@heroicons/react/24/solid";
 
 const servicesData = [
-  { emoji: "💅", name: "Manicure", desc: "Hi girly! Want your nails glowing like never before?" },
-  { emoji: "💆", name: "Massage", desc: "Relax & unwind – pamper your body and soul." },
-  { emoji: "🌀", name: "Dreadlocks", desc: "Flaunt your unique style with perfect dreadlocks." },
+  { icon: HandThumbUpIcon, name: "Manicure", desc: "Hi girly! Want your nails glowing like never before?" },
+  { icon: FaceSmileIcon, name: "Massage", desc: "Relax & unwind – pamper your body and soul." },
+  { icon: ScissorsIcon, name: "Dreadlocks", desc: "Flaunt your unique style with perfect dreadlocks." },
 ];
 
 const GlassmorphicSection = () => {
@@ -20,13 +21,11 @@ const GlassmorphicSection = () => {
   };
 
   const handleServiceCardClick = (service) => {
-    // Navigate to booking form and prefill the selected service
     navigate("/booking", { state: { selectedService: service } });
   };
 
   return (
     <section className="relative flex justify-center items-center py-20 bg-gray-100 dark:bg-gray-900 overflow-hidden">
-      
       {/* Floating sparkles */}
       <div className="absolute inset-0 pointer-events-none">
         {Array.from({ length: 20 }).map((_, i) => (
@@ -43,11 +42,9 @@ const GlassmorphicSection = () => {
       </div>
 
       <div className="relative bg-white/20 dark:bg-gray-800/20 backdrop-blur-xl rounded-3xl shadow-2xl p-10 max-w-5xl text-black dark:text-white transition-colors duration-500 flex flex-col md:flex-row gap-10 overflow-hidden">
-
-        {/* Gradient overlay for shimmer */}
         <div className="absolute inset-0 bg-gradient-to-tr from-purple-400 via-pink-400 to-blue-400 opacity-20 animate-gradient-slow rounded-3xl pointer-events-none"></div>
 
-        {/* Left side: text + buttons */}
+        {/* Left side */}
         <div className="flex flex-col justify-center gap-4 relative z-10">
           <h2 className="text-4xl font-extrabold tracking-tight">Discover Your Next Style</h2>
           <p className="text-gray-800 dark:text-gray-200 max-w-md">
@@ -69,24 +66,25 @@ const GlassmorphicSection = () => {
           </div>
         </div>
 
-        {/* Right side: mini service cards */}
+        {/* Right side: service cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 relative z-10">
-          {servicesData.map((service) => (
-            <div
-              key={service.name}
-              onClick={() => handleServiceCardClick(service)}
-              className="cursor-pointer bg-white/30 dark:bg-gray-700/30 backdrop-blur-md rounded-xl p-5 text-center text-gray-900 dark:text-gray-100 shadow-md hover:shadow-xl hover:scale-105 transform transition-all duration-300"
-            >
-              <div className="text-4xl">{service.emoji}</div>
-              <div className="mt-2 font-semibold">{service.name}</div>
-              <p className="mt-1 text-xs">{service.desc}</p>
-            </div>
-          ))}
+          {servicesData.map((service) => {
+            const Icon = service.icon;
+            return (
+              <div
+                key={service.name}
+                onClick={() => handleServiceCardClick(service)}
+                className="cursor-pointer bg-white/30 dark:bg-gray-700/30 backdrop-blur-md rounded-xl p-5 text-center text-gray-900 dark:text-gray-100 shadow-md hover:shadow-xl hover:scale-105 transform transition-all duration-300"
+              >
+                <Icon className="w-10 h-10 mx-auto text-purple-600 mb-2" />
+                <div className="mt-2 font-semibold">{service.name}</div>
+                <p className="mt-1 text-xs">{service.desc}</p>
+              </div>
+            );
+          })}
         </div>
-
       </div>
 
-      {/* Gradient animation */}
       <style>{`
         @keyframes gradient-slow {
           0% { background-position: 0% 50%; }

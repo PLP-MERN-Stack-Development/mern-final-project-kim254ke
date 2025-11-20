@@ -2,6 +2,9 @@ import express from "express";
 import multer from "multer";
 import fs from "fs";
 import User from "../models/User.js";
+import { updateUserProfile, getUserProfile } from "../controllers/profileController.js"
+
+
 
 const router = express.Router();
 
@@ -59,5 +62,13 @@ router.put("/avatar/:userId", upload.single("avatar"), async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
+
+
+//routes to update and get user profile
+router.put("/profile/:id", updateUserProfile);
+router.get("/profile/:id", getUserProfile);
+
+
+
 
 export default router;

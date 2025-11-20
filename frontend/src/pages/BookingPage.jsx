@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { getUserBookings, updateBooking, deleteBooking, createBooking } from "../services/bookingAPI";
 import { getServices } from "../services/serviceAPI";
 import { getStylists } from "../services/stylistAPI";
@@ -10,6 +10,7 @@ import AddOnSuggest from "../components/AddOnSuggest";
 export default function BookingPage() {
   const { user, token } = useContext(AuthContext);
   const navigate = useNavigate();
+  const location = useLocation();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -24,8 +25,6 @@ export default function BookingPage() {
   const [message, setMessage] = useState("");
   const [previewOpen, setPreviewOpen] = useState(false);
   const [selectedAddOns, setSelectedAddOns] = useState([]);
-
-  // New state: multiple service selection
   const [selectedServices, setSelectedServices] = useState([]);
 
   useEffect(() => {
@@ -56,11 +55,18 @@ export default function BookingPage() {
         const fetchedStylists = await getStylists();
         setServices(fetchedServices);
         setStylists(fetchedStylists);
+        
+        // Check if a service was preselected from ServiceCard
+        const preSelectedService = location.state?.selectedService;
+        if (preSelectedService) {
+          setServiceId(preSelectedService._id);
+          setCategory(preSelectedService.category);
+        }
       } catch (err) {
         console.error("Error fetching services or stylists:", err);
       }
     })();
-  }, []);
+  }, [location.state]);
 
   const handleCancel = async (id) => {
     if (!confirm("Are you sure you want to cancel this booking?")) return;
@@ -88,6 +94,7 @@ export default function BookingPage() {
     }
   };
 
+  // BookingForm functions
   const serviceObj = services.find(s => s._id === serviceId);
   const stylistObj = stylists.find(s => s._id === stylistId);
 
@@ -98,18 +105,25 @@ export default function BookingPage() {
     });
   };
 
-  // Add service to selection list
-  const addServiceToSelection = () => {
-    if (!serviceId) return;
-    const selected = services.find(s => s._id === serviceId);
-    if (selectedServices.find(s => s._id === selected._id)) return; // avoid duplicates
-    setSelectedServices([...selectedServices, { ...selected, stylistId, addOns: selectedAddOns }]);
+  const handleAddService = () => {
+    if (!serviceId) {
+      setMessage("Please select a service first");
+      return;
+    }
+
+    const serviceToAdd = services.find(s => s._id === serviceId);
+    if (!selectedServices.find(s => s._id === serviceToAdd._id)) {
+      setSelectedServices(prev => [
+        ...prev,
+        { ...serviceToAdd, addOns: selectedAddOns, stylistId, stylistName: stylistObj?.name }
+      ]);
+      setMessage("Service added! Add more or preview your booking.");
+    }
 
     // Reset current selection
     setServiceId("");
-    setStylistId("");
     setSelectedAddOns([]);
-    setCategory("");
+    setStylistId("");
   };
 
   const openPreview = (e) => {
@@ -119,7 +133,7 @@ export default function BookingPage() {
       setTimeout(() => navigate("/login"), 1500);
       return;
     }
-    if (!date || !time || selectedServices.length === 0) {
+    if ((!serviceId && selectedServices.length === 0) || !date || !time) {
       setMessage("Please select at least one service, date, and time");
       return;
     }
@@ -134,27 +148,46 @@ export default function BookingPage() {
     }
 
     try {
-      for (const s of selectedServices) {
-        const bookingData = {
+      // Collect all services to book
+      const allServices = [...selectedServices];
+      
+      // Include current selection if not added to list
+      if (serviceId) {
+        const s = services.find(s => s._id === serviceId);
+        if (s && !allServices.find(existing => existing._id === s._id)) {
+          allServices.push({ 
+            ...s, 
+            addOns: selectedAddOns, 
+            stylistId, 
+            stylistName: stylistObj?.name 
+          });
+        }
+      }
+
+      // Create booking for each service
+      for (let s of allServices) {
+        await createBooking({
           serviceId: s._id,
           stylistId: s.stylistId || undefined,
           date,
           time,
           addOns: s.addOns || [],
-        };
-        await createBooking(bookingData, token);
+        }, token);
       }
 
-      setMessage("All bookings confirmed! 🎉");
-      setSelectedServices([]);
+      setMessage("Booking confirmed! 🎉");
+
+      // Reset form
       setServiceId("");
       setStylistId("");
       setDate("");
       setTime("");
       setCategory("");
       setSelectedAddOns([]);
+      setSelectedServices([]);
       setPreviewOpen(false);
 
+      // Refresh bookings list
       const data = await getUserBookings(user._id, token);
       setBookings(data.reverse());
     } catch (err) {
@@ -170,26 +203,6 @@ export default function BookingPage() {
         {/* Booking Form */}
         <div className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 p-6 rounded shadow-md transition-colors duration-300">
           <h3 className="text-xl font-bold mb-4">Book a Service</h3>
-
-          {/* Selected Services List */}
-          {selectedServices.length > 0 && (
-            <div className="bg-gray-100 dark:bg-gray-700 p-4 rounded mb-4">
-              <h4 className="font-semibold mb-2">Selected Services</h4>
-              <ul className="space-y-1">
-                {selectedServices.map((s, idx) => (
-                  <li key={idx} className="flex justify-between items-center">
-                    <span>{s.name} {s.addOns?.length > 0 && `(Add-ons: ${s.addOns.map(a => a.name).join(", ")})`}</span>
-                    <button
-                      onClick={() => setSelectedServices(selectedServices.filter((_, i) => i !== idx))}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      Remove
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
 
           <div className="space-y-3">
             {/* Category Filter */}
@@ -244,7 +257,7 @@ export default function BookingPage() {
             {selectedAddOns.length > 0 && (
               <div className="mt-2">
                 <div className="text-sm font-medium">Selected add-ons</div>
-                <div className="flex gap-2 mt-2">
+                <div className="flex gap-2 mt-2 flex-wrap">
                   {selectedAddOns.map(a => (
                     <span key={a.name} className="bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded text-sm text-gray-900 dark:text-gray-100">
                       {a.name}
@@ -254,41 +267,90 @@ export default function BookingPage() {
               </div>
             )}
 
+            {/* Add Service Button */}
+            <button
+              type="button"
+              onClick={handleAddService}
+              disabled={!serviceId}
+              className="mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+              Add Service to Booking
+            </button>
+
+            {/* List of selected services */}
+            {selectedServices.length > 0 && (
+              <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                <div className="font-medium text-gray-900 dark:text-gray-100 mb-2 flex items-center gap-2">
+                  <svg className="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Services Added ({selectedServices.length}):
+                </div>
+                <ul className="space-y-2">
+                  {selectedServices.map((s, idx) => (
+                    <li key={idx} className="flex justify-between items-center bg-white dark:bg-gray-800 px-3 py-2 rounded shadow-sm">
+                      <div className="flex-1">
+                        <div className="font-semibold">{s.name}</div>
+                        <div className="text-xs text-gray-600 dark:text-gray-400">
+                          {s.addOns?.length > 0 && `Add-ons: ${s.addOns.map(a => a.name).join(", ")} • `}
+                          {s.stylistName ? `Stylist: ${s.stylistName}` : 'Any stylist'}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setSelectedServices(selectedServices.filter((_, i) => i !== idx))}
+                        className="text-red-500 hover:text-red-700 ml-2"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             {/* Buttons */}
             <div className="flex gap-3 mt-3">
               <button
-                 onClick={() => navigate("/services")}
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-              >
-                Add Service
-              </button>
-              <button
                 onClick={openPreview}
-                className="bg-purple-600 dark:bg-purple-700 text-white px-4 py-2 rounded hover:bg-purple-700 dark:hover:bg-purple-800 transition-colors"
+                className="flex-1 bg-purple-600 dark:bg-purple-700 text-white dark:text-gray-100 px-4 py-2 rounded hover:bg-purple-700 dark:hover:bg-purple-800 transition-colors"
               >
-                Book Selected Services
+                {selectedServices.length > 0 || serviceId ? 'Preview Booking' : 'Preview slot'}
               </button>
               <button
-                onClick={() => { setServiceId(""); setCategory(""); setDate(""); setTime(""); setSelectedAddOns([]); }}
+                onClick={() => { 
+                  setServiceId(""); 
+                  setCategory(""); 
+                  setDate(""); 
+                  setTime(""); 
+                  setSelectedAddOns([]); 
+                  setSelectedServices([]);
+                  setMessage("");
+                }}
                 className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               >
                 Reset
               </button>
             </div>
 
-            {message && <div className="text-sm mt-2 text-green-600 dark:text-green-400">{message}</div>}
+            {message && (
+              <div className={`text-sm mt-2 ${message.includes('failed') || message.includes('must') ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
+                {message}
+              </div>
+            )}
           </div>
 
           <SlotPreviewModal
-  open={previewOpen}
-  onClose={() => setPreviewOpen(false)}
-  slot={{ date, time }}
-  selectedServices={selectedServices.map(s => ({
-    ...s,
-    stylistName: stylists.find(st => st._id === s.stylistId)?.name || undefined
-  }))}
-  onConfirm={handleConfirm}
-/>
+            open={previewOpen}
+            onClose={() => setPreviewOpen(false)}
+            slot={{ date, time }}
+            service={serviceObj}
+            stylist={stylistObj}
+            suggestedAddOns={selectedAddOns}
+            selectedServices={selectedServices}
+            onConfirm={handleConfirm}
+          />
         </div>
 
         {/* Your Bookings Section */}

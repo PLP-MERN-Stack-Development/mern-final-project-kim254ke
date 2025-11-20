@@ -3,6 +3,8 @@ import Hero from "../components/Hero";
 import ServiceCard from "../components/ServiceCard";
 import StylistCard from "../components/StylistCard";
 import Testimonials from "../components/Testimonials";
+import ChatWidget from "../components/ChatWidget";
+import LoadingSpinner from "../components/LoadingSpinner";
 import { getServices } from "../services/serviceAPI";
 import { getStylists } from "../services/stylistAPI";
 
@@ -34,7 +36,7 @@ export default function Home() {
   const featured = services.slice(0, 6);
   const showServices = filterCat ? services.filter(s => s.category === filterCat) : featured;
 
-  if (loading) return <div className="p-10 text-center">Loading homepage...</div>;
+  if (loading) return <LoadingSpinner fullScreen message="Loading your beauty sanctuary..." />;
   if (error) return <div className="p-10 text-center text-red-600">{error}</div>;
 
   return (
@@ -76,6 +78,9 @@ export default function Home() {
       <div className="max-w-6xl mx-auto px-6">
         <Testimonials />
       </div>
+
+      {/* Chat Widget - only on homepage */}
+      <ChatWidget />
     </div>
   );
 }

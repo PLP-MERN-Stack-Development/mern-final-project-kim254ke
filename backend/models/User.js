@@ -28,6 +28,11 @@ const userSchema = new mongoose.Schema(
       enum: ["user", "admin"],
       default: "user",
     },
+    location: {
+      type: String,
+      default: "",
+      trim: true,
+    },
     avatar: {
       type: String,
       default: "/default-avatar.png", // default avatar
