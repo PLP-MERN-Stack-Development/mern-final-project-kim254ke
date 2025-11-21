@@ -64,35 +64,68 @@ const getAutomatedResponse = (message) => {
   return "That's a great question! 🤔 Our team can give you more details. You can also browse our services page or book a consultation. What would you like to know more about?";
 };
 
-export const setupSocketIO = (server) => {
-  const io = new Server(server, {
+export const setupSocketIO = (httpServer) => {
+  // CORS Configuration
+  const allowedOrigins = [
+    "https://client-s58d.onrender.com", 
+    "https://client-8q8n30cor-kim254kes-projects.vercel.app", 
+    "http://localhost:3000",
+    "http://localhost:5173", 
+    process.env.CLIENT_URL,
+  ].filter(Boolean); 
+    
+  const io = new Server(httpServer, {
     cors: {
-      origin: "http://localhost:5173",
+      origin: allowedOrigins,
       methods: ["GET", "POST"],
       credentials: true
     }
   });
 
-  io.on("connection", (socket) => {
-    console.log("Client connected:", socket.id);
+  // Socket.IO Connection Logic
+  io.on('connection', (socket) => {
+    console.log(`✅ Socket connected: ${socket.id}`);
 
-    // Handle incoming messages from client
-    socket.on("userMessage", (message) => {
-      console.log("User message:", message);
+    // Handle user messages for chatbot
+    socket.on('userMessage', (message) => {
+      console.log(`💬 User message from ${socket.id}:`, message);
       
       // Get automated response
       const botResponse = getAutomatedResponse(message);
       
+      console.log(`🤖 Bot response:`, botResponse);
+      
       // Send response back after a short delay (simulate typing)
       setTimeout(() => {
-        socket.emit("botMessage", botResponse);
+        socket.emit('botMessage', botResponse);
       }, 1000);
     });
 
-    socket.on("disconnect", () => {
-      console.log("Client disconnected:", socket.id);
+    // Example: Join a room (for user-specific notifications)
+    socket.on('joinRoom', (roomId) => {
+      socket.join(roomId);
+      console.log(`🚪 Socket ${socket.id} joined room: ${roomId}`);
+    });
+
+    // Handle real-time messaging between users
+    socket.on('sendMessage', (data) => {
+      io.to(data.roomId).emit('receiveMessage', data.message);
+      console.log(`📨 Message sent to room ${data.roomId}`);
+    });
+
+    // Handle booking update notifications
+    socket.on('bookingUpdate', (data) => {
+      io.to(`user-${data.userId}`).emit('newNotification', { 
+        message: 'Your booking status has changed.' 
+      });
+      console.log(`🔔 Booking notification sent to user ${data.userId}`);
+    });
+
+    socket.on('disconnect', () => {
+      console.log(`❌ Socket disconnected: ${socket.id}`);
     });
   });
 
+  console.log('🔌 Socket.IO setup complete');
   return io;
 };
