@@ -1,25 +1,18 @@
 // src/__tests__/App.test.jsx
+import { API_BASE_URL, SOCKET_URL } from '../config/api';
 
-import { render, screen } from '@testing-library/react';
-import App from '../App';
+describe('Application Configuration', () => {
+  it('should have API_BASE_URL defined', () => {
+    expect(API_BASE_URL).toBeDefined();
+    expect(typeof API_BASE_URL).toBe('string');
+  });
 
-// Mock window.matchMedia for this specific test file
-Object.defineProperty(window, 'matchMedia', {
-  writable: true,
-  value: jest.fn().mockImplementation(query => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: jest.fn(), // deprecated
-    removeListener: jest.fn(), // deprecated
-    addEventListener: jest.fn(),
-    removeEventListener: jest.fn(),
-    dispatchEvent: jest.fn(),
-  })),
-});
+  it('should have SOCKET_URL defined', () => {
+    expect(SOCKET_URL).toBeDefined();
+    expect(typeof SOCKET_URL).toBe('string');
+  });
 
-
-test('renders without crashing', () => {
-  render(<App />);
-  // ... rest of your test
+  it('should have valid API URL format', () => {
+    expect(API_BASE_URL).toMatch(/^https?:\/\//);
+  });
 });

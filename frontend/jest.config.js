@@ -1,24 +1,25 @@
-// jest.config.js
-
 export default {
-  // The environment to run your tests in (jsdom simulates a browser)
-  testEnvironment: "jsdom",
-
-  // Tells Jest how to process your JavaScript and JSX files
-  transform: {
-    "^.+\\.[tj]sx?$": "babel-jest",
-  },
-
-  // The file extensions Jest will look for
-  moduleFileExtensions: ["js", "jsx", "ts", "tsx"],
-
-  // The file to run before each test file to set up the environment
-  // ** This is the corrected line **
-  setupFilesAfterEnv: ["<rootDir>/src/setupTests.js"],
-
-  // Mocks for different file types so Jest can import them
+  testEnvironment: 'jsdom',
+  setupFilesAfterEnv: ['<rootDir>/src/tests/setup.js'],
   moduleNameMapper: {
-    "\\.(css|less|sass|scss)$": "identity-obj-proxy",
-    "\\.(gif|ttf|eot|svg)$": "<rootDir>/__mocks__/fileMock.js",
+    '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
+    '\\.(jpg|jpeg|png|gif|svg)$': '<rootDir>/src/tests/__mocks__/fileMock.js'
   },
+  transform: {
+    '^.+\\.(js|jsx)$': 'babel-jest'
+  },
+  transformIgnorePatterns: [
+    'node_modules/(?!(react-router-dom|@heroicons)/)'
+  ],
+  collectCoverageFrom: [
+    'src/**/*.{js,jsx}',
+    '!src/main.jsx',
+    '!src/tests/**',
+    '!**/node_modules/**'
+  ],
+  testMatch: [
+    '**/__tests__/**/*.[jt]s?(x)',
+    '**/?(*.)+(spec|test).[jt]s?(x)'
+  ],
+  moduleFileExtensions: ['js', 'jsx', 'json', 'node']
 };
