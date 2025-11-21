@@ -8,7 +8,16 @@ screenshots
 ![booking](./screenshots/booking.png)
 ![services](./screenshots/services.png)
 ![stylist](./screenshots/stylist.png)
-![profile](./screenshots/profile.)
+![profile](./screenshots/profile.png)
+
+
+
+video demonstration[https://player.cloudinary.com/embed/?cloud_name=dtvf0bcxg&public_id=WhatsApp_Video_2025-11-21_at_3.53.38_PM_fnykgf&profile=cld-default]
+
+
+
+CI-CD testing
+![Home](./screenshots/ci-cd%20testing.png) 
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)
