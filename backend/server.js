@@ -123,3 +123,5 @@ process.on('unhandledRejection', (err) => {
 
 // Start the server
 startServer();
+
+export default app;
